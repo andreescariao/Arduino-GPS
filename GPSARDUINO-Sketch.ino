@@ -1,6 +1,6 @@
 //Desenvolvimento: André Escarião, Estudante de Engenharia Elétrica(UFCG), Processo Seletivo Parahyasas
 //Projeto GPS e SD para Arduino:
-//Código que faz comunicação serial com o módulo GPS e SD. Com a utilização de três bibliotecas <SoftwareSerial.h>, <TinyGPS.h> e <SD.h> a IDE recebe informações
+//Código que faz comunicação serial com o módulo GPS e SD. Com a utilização de quatro bibliotecas <SoftwareSerial.h>, <TinyGPS.h>, <SD.h> e <SPI.h> a IDE recebe informações
 //do módulo GPS - latitude, longitude, precisão da informação, dia, hora, altitude, velocidade e sentido de deslocamento - por meio de satélites e armazena no cartão SD.
 
 
