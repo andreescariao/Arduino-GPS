@@ -2,7 +2,7 @@
 Desenvolvimento: André Escarião, Estudante de Engenharia Elétrica(UFCG), Processo Seletivo Parahyasas
 Projeto GPS e SD para Arduino:
 Código que faz comunicação serial com o módulo GPS e SD. Com a utilização de quatro bibliotecas <SoftwareSerial.h>, <TinyGPS.h>, <SD.h> e <SPI.h> a IDE recebe informações
-do módulo GPS - latitude, longitude, precisão da informação, dia, hora, altitude, velocidade e sentido de deslocamento - por meio de satélites e armazena no cartão SD.
+do módulo GPS - latitude, longitude - por meio de satélites e armazena no cartão SD.
 */
 
 
@@ -17,210 +17,112 @@ do módulo GPS - latitude, longitude, precisão da informação, dia, hora, alti
 
 
 
-//Instância um objeto "serial1" para fazer comunicação / definição de portas RX=10 e TX=11
-SoftwareSerial serial1(10, 11);
-//Insstância um objeto "gps1" para interpretação dos dados recebidos
-TinyGPS gps1;
+// Criar duas portas de comunicação serial que representam os pinos Rx e Tx 
+SoftwareSerial SerialGPS(4,3);     
 
-
-
+// Definição dos objetos GPS e myFile para os módulos 
+TinyGPS GPS;              
 File myFile;
 
+// Declaração das variáveis (latitude, longitude, velocidade, data, hora)
+bool controle = 0;
+float lat, lon, vel;
+unsigned long data, hora;
+unsigned short sat;
+byte pinoCS = 10; //Pin 10 para Nano/UNO
+
+// Define nomes para os pinos de conexão dos botões (Inicia e Termina) e LED (Vermelho) 
+#define INICIA 9
+#define TERMINA 5
+#define LEDVERMELHO 2
 
 
-//Comunicação serial
+
+// Logo após as definições de nomes, o fluxo de execução entrará na função setup e realizará as configurações iniciais. 
 void setup() {
-
-  // velocidade do gps =9600
-  serial1.begin(9600);
-  //monitor serial (pode configurar outras velocidades)
-  Serial.begin(9600);
-
-
-
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB port only
-  }
-
+  
+  // Primeiramente, o GPS 6M e a comunicação serial serão inicializados. 
+  SerialGPS.begin(9600);  
+  Serial.begin(9600);     
+ 
   Serial.println("O GPS do Parahyasas aguarda pelo sinal dos satelites...");
+  
+  pinMode(pinoCS, OUTPUT); //Define o pinoSS como saida
+  pinMode(LEDVERMELHO, OUTPUT);
 
-
-  Serial.print("Iniciando Cartao SD...");
-
-  if (!SD.begin(4)) {
-    Serial.println("A inicializacao falhou!");
-    while (1);
-  }
-  Serial.println("Inicializacao feita.");
-
-  //Abre o arquivo. Perceba que apenas um arquivo pode ser aberto nesse momento,
-  //portanto você terá que fechar este antes de abrir outro
-  myFile = SD.open("test.txt", FILE_WRITE);
-
-  //Se este arquivo abriu corretamente, escreva nele:
-  if (myFile) {
-    Serial.print("Writing to test.txt...");
-    myFile.println("testing 1, 2, 3.");
-    //Fecha o arquivo:
-    myFile.close();
-    Serial.println("done.");
-  } else {
-    //Se este arquivo não abriu, imprima um erro:
-    Serial.println("error opening test.txt");
-  }
-
-  //Abre novamente o arquivo para leitura:
-  myFile = SD.open("test.txt");
-  if (myFile) {
-    Serial.println("test.txt:");
-
-    //Lê do arquivo até não ter mais nada nele:
-    while (myFile.available()) {
-      Serial.write(myFile.read());
+    // Em seguida, será realizada a inicialização de comunicação do SD Card.
+    // Caso ocorra alguma falha de comunicação com o Módulo SD Card, o sistema apresentará uma mensagem de erro no monitor serial.
+    if (SD.begin())
+    { 
+      Serial.println("SD Card pronto para uso.");
     }
-    //Fecha o arquivo:
-    myFile.close();
-  } else {
-    //Se este arquivo não abriu, imprima um erro:
-    Serial.println("error opening test.txt");
-  }
-
+    else
+    {
+      Serial.println("Falha na inicialização do SD Card.");
+      return;
+    }
 }
 
 
 
+// Na função loop, iniciaremos a apresentação da lógica de funcionamento dos dispositivos e controle completo do sistema. 
+void loop() 
+{
 
+    // O sistema irá realizar a leitura dos botões de Início e Término.
+    bool BotaoInicia = digitalRead(INICIA);
+    bool BotaoTermina = digitalRead(TERMINA);
 
+    // Quando o usuário pressionar o Botão Iniciar, o fluxo de código entrará na condição a seguir.
+    if(BotaoInicia == 1)
+    {
+      // Será atribuído 1 à variável controle. Essa variável será utilizada para liberar a gravação dos dados no Módulo SD Card.
+      controle = 1;
+      
+      // Cria e abre o arquivo para escrita
+      myFile = SD.open("GPS.txt", FILE_WRITE);
+      
+      // Determina intervalo de tempo de 1 segundo para escrita.
+      delay(1000);
 
-//Uso do módulo
-void loop() {
-
-  bool recebido = false;
-
-  //Verificar se tem alguma informação disponível ( se tiver, recebe do módulo e envia para o objeto "gps1" )
-  while (serial1.available()) {
-    char cIn = serial1.read();
-    recebido = gps1.encode(cIn);
-  }
-
-
-  //Se receber as informações por completo, ler as informações
-  if (recebido) {
-
-    Serial.println("----------------------------------------");
-
-    //Declaração das variáveis: Latitude e Longitude
-    long latitude, longitude;
-
-    //Variável: idade da informação (quanto tempo faz que a informação foi gerada pelo satélite até chegar ao gps para saber a precisão da informação em milisegundos)
-    unsigned long idadeInfo;
-
-    //Função get_position que guarda as informações nas variáveis(latitude,longitude e idade da informação)
-    gps1.get_position(&latitude, &longitude, &idadeInfo);
-
-    //Controle para Verificar se as variáveis(latitude,longitude,idadeInfo) estão válidas
-    //Se as informações forem válidas, imprime os valores das variáveis no serial
-    if (latitude != TinyGPS::GPS_INVALID_F_ANGLE) {
-      Serial.print("Latitude: ");
-      Serial.println(float(latitude) / 100000, 6);
+      // Escrevemos os nomes Latitude e Longitude a fim de formar as duas colunas dos dados de posição do GPS.
+      myFile.print("Latitude");
+      myFile.println("  Longitude");
     }
 
-    if (longitude != TinyGPS::GPS_INVALID_F_ANGLE) {
-      Serial.print("Longitude: ");
-      Serial.println(float(longitude) / 100000, 6);
+    // Após chegar ao local desejado, o usuário deverá apertar o botão de término, para finalizar a gravação dos dados de percurso.
+    if(BotaoTermina == 1)
+    {
+      // Primeiramente, a variável controle será colocada para 0.
+      controle = 0;
+
+      // Desse modo, o sistema irá parar de gravar dados no cartão de memória.
+      myFile.close();
+
+      // Em seguida, o arquivo será fechado e o LED Vermelho será desligado, a fim de informar que o sistema parou de capturar dados do módulo GPS.
+      digitalWrite(LEDVERMELHO, LOW);
     }
 
-    if (idadeInfo != TinyGPS::GPS_INVALID_AGE) {
-      Serial.print("Idade da Informacao (ms): ");
-      Serial.println(idadeInfo);
+    // Agora, o fluxo entrará na condição de gravação dos dados do GPS no módulo.
+    if(controle == 1)
+    {
+        // Após o GPS receber os dados, o sistema irá ligar o LED Vermelho. O LED irá sinalizar a coleta e gravação de dados no módulo SD Card.
+        while (SerialGPS.available())
+        {
+          if (GPS.encode(SerialGPS.read())) 
+          {
+            digitalWrite(LEDVERMELHO, HIGH);
+            
+            // Posteriormente, é processado as posições de latitude e longitude.
+            GPS.f_get_position(&lat, &lon);
+
+            // Por fim, de acordo com as linhas de código a seguir, os dados serão escritos no arquivo de texto.
+            myFile.print(lat  , 6);
+            myFile.println(lon, 6);
+            
+            // A leitura e gravação é realizada a cada 1 segundo.
+            delay(1000);
+           }
+        }
     }
-
-
-    //Declaração de variáveis: Dia, Hora...
-    int ano;
-    byte mes, dia, hora, minuto, segundo, centesimo;
-
-    //Função "crack_datetime" atualiza todas as variáveis
-    gps1.crack_datetime(&ano, &mes, &dia, &hora, &minuto, &segundo, &centesimo, &idadeInfo);
-
-    Serial.print("Data (GMT): ");
-    Serial.print(dia);
-    Serial.print("/");
-    Serial.print(mes);
-    Serial.print("/");
-    Serial.println(ano);
-
-    Serial.print("Horario (GMT): ");
-    Serial.print(hora);
-    Serial.print(":");
-    Serial.print(minuto);
-    Serial.print(":");
-    Serial.print(segundo);
-    Serial.print(":");
-    Serial.println(centesimo);
-
-
-    //Declaração da variável: Altitude
-    float altitudeGPS;
-    altitudeGPS = gps1.f_altitude();
-
-    //Saber em que altitude está o gps ao nível do mar(cm)
-    if ((altitudeGPS != TinyGPS::GPS_INVALID_ALTITUDE) && (altitudeGPS != 1000000)) {
-      Serial.print("Altitude (cm): ");
-      Serial.println(altitudeGPS);
-    }
-
-
-    //Declaração de variável: velocidade (OBS: km/h)
-    float velocidade;
-    //velocidade = gps1.speed();        //nós
-    velocidade = gps1.f_speed_kmph();   //km/h
-    //velocidade = gps1.f_speed_mph();  //milha/h
-    //velocidade = gps1.f_speed_mps();  //milha/segundo
-
-    Serial.print("Velocidade (km/h): ");
-    Serial.println(velocidade, 2);  //Conversão de Nós para Km/h
-
-
-
-    //Declaração de variável: sentito (em centesima de graus)
-    unsigned long sentido;
-
-    //Comando course guarda em variável sentido em quantos graus estou me deslocando
-    sentido = gps1.course();
-
-    //Saber em qual sentido estou(Norte,Sul,Leste,Oeste)
-    Serial.print("Sentido (grau): ");
-    Serial.println(float(sentido) / 100, 2);
-
-
-    //Declaração de variáveis: satélites e precisão
-    unsigned short satelites;
-    unsigned long precisao;
-
-    //Comando para reconhecer satélites
-    satelites = gps1.satellites();
-    //Comando para precisão da informação recebida dos satélites
-    precisao =  gps1.hdop();
-
-    if (satelites != TinyGPS::GPS_INVALID_SATELLITES) {
-      Serial.print("Satelites: ");
-      Serial.println(satelites);
-    }
-
-    if (precisao != TinyGPS::GPS_INVALID_HDOP) {
-      Serial.print("Precisao (centesimos de segundo): ");
-      Serial.println(precisao);
-    }
-
-
-    //Comando para saber distância entre dois pontos
-    //float distancia_entre;
-    //distancia_entre = gps1.distance_between(lat1, long1, lat2, long2);
-
-    //Comando para saber do ponto1 para o ponto2 qual é o sentido do deslocamento em uma linha reta
-    //float sentido_para;
-    //sentido_para = gps1.course_to(lat1, long1, lat2, long2);
-
-  }
 }
