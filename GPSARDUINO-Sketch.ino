@@ -34,7 +34,7 @@ bool controle = 0;
 float lat, lon, vel;
 unsigned long data, hora;
 unsigned short sat;
-byte pinoCS = 10; //Pin 10 para Nano/UNO
+byte pinoCS = 10; //Pin 10 para UNO
 
 // Define nomes para os pinos de conexão dos botões (Inicia e Termina) e LED (Vermelho) 
 #define INICIA 9
