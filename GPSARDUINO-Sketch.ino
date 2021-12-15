@@ -10,13 +10,13 @@ Dessa forma, a IDE recebe informações do módulo GPS - latitude, longitude - p
 */
 
 
-//Biblioteca que já vem com o arduino que faz com que as portas digitais funcionem como porta serial
+// Biblioteca que já vem com o arduino que faz com que as portas digitais funcionem como porta serial
 #include <SoftwareSerial.h>
-//Biblioteca que recebe pacote de informações do módulo através da softwareserial e facilita a compreensão (interpreta os dados) / é válida pra qualquer módulo
+// Biblioteca que recebe pacote de informações do módulo através da softwareserial e facilita a compreensão (interpreta os dados) / é válida pra qualquer módulo
 #include <TinyGPS.h>
-//Biblioteca do Cartão SD para gravar na memória
+// Biblioteca do Cartão SD para gravar na memória
 #include <SD.h>
-//Biblioteca que complementa a biblioteca <SD.h>
+// Biblioteca que complementa a biblioteca <SD.h>
 #include <SPI.h>
 
 
