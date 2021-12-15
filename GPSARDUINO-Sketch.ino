@@ -6,7 +6,7 @@ Projeto Arduino-GPS:
 O projeto consiste em gravar as posições de locomoção de um dispositivo de uma localidade para outra.
 Assim, o sistema possuirá dois botões. Um será utilizado para iniciar a gravação das posições e o segundo, será utilizado para finalizar as gravações.
 Além disso, teremos um LED para sinalizar o funcionamento e gravação dos dados do GPS em tempo real.
-Dessa forma, a IDE recebe informações do módulo GPS - latitude, longitude - por meio de satélites e armazena no cartão SD.
+Dessa forma, a IDE recebe informações do módulo GPS - latitude, longitude, altitude, velocidade e sentido - por meio de satélites e armazena no cartão SD.
 */
 
 
@@ -28,13 +28,14 @@ SoftwareSerial SerialGPS(4,3);
 TinyGPS GPS;              
 File myFile;
 
-// Declaração das variáveis (latitude, longitude, velocidade, data, hora)
+// Declaração das variáveis (latitude, longitude, altitude, velocidade, sentido, ano, mes, dia, hora, minuto, segundo)
 bool controle = 0;
-float lat, lon, vel;
-unsigned long data, hora;
-unsigned short sat;
-byte pinoCS = 10; //Pin 10 para UNO
-
+float lat, lon, alt, vel;
+unsigned long sentido;
+int ano;
+byte mes, dia, hora, minuto, segundo;
+byte pinoCS = 10; // Pin 10 para UNO
+        
 // Define nomes para os pinos de conexão dos botões (Inicia e Termina) e LED (Vermelho) 
 #define INICIA 9
 #define TERMINA 5
@@ -51,7 +52,7 @@ void setup() {
  
   Serial.println("O GPS do Parahyasas aguarda pelo sinal dos satelites...");
   
-  pinMode(pinoCS, OUTPUT); //Define o pinoSS como saida
+  pinMode(pinoCS, OUTPUT); // Define o pinoSS como saida
   pinMode(LEDVERMELHO, OUTPUT);
 
     // Em seguida, será realizada a inicialização de comunicação do SD Card.
@@ -89,9 +90,19 @@ void loop()
       // Determina intervalo de tempo de 1 segundo para escrita.
       delay(1000);
 
-      // Escrevemos os nomes Latitude e Longitude a fim de formar as duas colunas dos dados de posição do GPS.
+      // Escrevemos os nomes das variáveis a fim de formar as 11 colunas dos dados recebidos do GPS.
       myFile.print("Latitude");
       myFile.println("  Longitude");
+      myFile.println("  Altitude");
+      myFile.println("  Velocidade");
+      myFile.println("  sentido(grau)");
+      myFile.println("  dia");
+      myFile.println("  mes");
+      myFile.println("  ano");
+      myFile.println("  hora");
+      myFile.println("  minuto");
+      myFile.println("  segundo");
+
     }
 
     // Após chegar ao local desejado, o usuário deverá apertar o botão de término, para finalizar a gravação dos dados de percurso.
@@ -117,12 +128,33 @@ void loop()
           {
             digitalWrite(LEDVERMELHO, HIGH);
             
-            // Posteriormente, é processado as posições de latitude e longitude.
+            // Posteriormente, é processado as posições de latitude e longitude...
             GPS.f_get_position(&lat, &lon);
 
+            // É atribuido o valor da altitude...
+            alt = GPS.f_altitude();
+
+            // É atribuido o valor da velocidade...
+            vel = GPS.f_speed_kmph();   //km/h
+
+            // É atribuido o valor do sentido em graus...
+            sentido = GPS.course();
+
+            // É atribuido os valores das variáveis de tempo...
+            GPS.crack_datetime(&ano, &mes, &dia, &hora, &minuto, &segundo);
+            
             // Por fim, de acordo com as linhas de código a seguir, os dados serão escritos no arquivo de texto.
             myFile.print(lat  , 6);
             myFile.println(lon, 6);
+            myFile.println(alt, 6);
+            myFile.println(vel, 6);
+            myFile.println(float(sentido) / 100 , 2);
+            myFile.println(dia);
+            myFile.println(mes);
+            myFile.println(ano);
+            myFile.println(hora);
+            myFile.println(minuto);
+            myFile.println(segundo);
             
             // A leitura e gravação é realizada a cada 1 segundo.
             delay(1000);
