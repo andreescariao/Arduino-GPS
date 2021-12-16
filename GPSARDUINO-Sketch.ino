@@ -1,5 +1,5 @@
 /*
-Desenvolvimento: André Escarião, Estudante de Engenharia Elétrica(UFCG), Processo Seletivo Parahyasas
+Desenvolvimento: André Escarião, Graduando em Engenharia Elétrica(UFCG), Processo Seletivo Parahyasas
 
 Projeto Arduino-GPS:
 
