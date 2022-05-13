@@ -1,4 +1,4 @@
-# Arduino-GPS
+# Arduino_GPS
 
 O projeto grava dados referentes ao tempo e posições de locomoção de um dispositivo de uma localidade para outra.
 Assim, o sistema possuirá dois botões. Um será utilizado para iniciar a gravação das posições e o segundo, será utilizado para finalizar as gravações.
